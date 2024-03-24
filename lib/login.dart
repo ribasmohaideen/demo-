@@ -1,12 +1,11 @@
+import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
+import 'package:demoapi/api.dart';
+import 'package:demoapi/dashboard.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart'as http;
-
-import 'dashboard.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({Key? key}) : super(key: key);
+  const LoginPage({super.key});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -14,33 +13,33 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
+  bool showButton = false;
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  var abc = '';
-  var password = '';
-  main() async {
-    var request = http.MultipartRequest('POST',
-        Uri.parse('https://www.demo.odofortius.in/rest_api/users_login'));
-    request.fields.addAll({
-      'users_email': 'areeb@fortiusinfocom.in',
-      'password': '$password'
-    });
+  String username = '';
+  String password = '';
 
-
-    http.StreamedResponse response = await request.send();
-
-    if (response.statusCode == 200) {
-      print(await response.stream.bytesToString());
-    }
-    else {
-      print(response.reasonPhrase);
+  userLogin(context) async {
+    Map res = await HttpService().postWithBody('/rest_api/users_login',
+        {"users_email": username.toString(), "password": password.toString()});
+    if (res["data"]["Status"] == "Success") {
+      Navigator.push(
+          context, MaterialPageRoute(builder: (context) => const Dashboard()));
+      setState(() {
+        showButton = false;
+      });
+    } else {
+      setState(() {
+        showButton = false;
+      });
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Center(child: Text('Login')),
+        title: const Center(child: Text('Login')),
       ),
       body: Center(
         child: Form(
@@ -59,6 +58,9 @@ class _LoginPageState extends State<LoginPage> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
+                  onChanged: (value) {
+                    username = value;
+                  },
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter an email';
@@ -67,7 +69,7 @@ class _LoginPageState extends State<LoginPage> {
                   },
                 ),
               ),
-              SizedBox(height: 25),
+              const SizedBox(height: 25),
               SizedBox(
                 width: 370,
                 child: TextFormField(
@@ -79,8 +81,8 @@ class _LoginPageState extends State<LoginPage> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  onChanged: (value) => {
-                    password = value
+                  onChanged: (value) {
+                    password = value;
                   },
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -98,21 +100,34 @@ class _LoginPageState extends State<LoginPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
                   ),
-                  onPressed: () async {
-                    main();
-                    if (_formKey.currentState!.validate()) {
-                    }
-                  },
-                  child: const Text(
-                    'Login',
-                    style: TextStyle(
-                      fontSize: 20,
-                      color: Colors.white,
-                    ),
-                  ),
+                  onPressed: showButton
+                      ? () {}
+                      : () async {
+                          if (_formKey.currentState!.validate()) {
+                            setState(() {
+                              showButton = true;
+                            });
+                            userLogin(context);
+                          }
+                        },
+                  child: showButton
+                      ? const SizedBox(
+                        height: 15,
+                        width: 15,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                        ),
+                      )
+                      : const Text(
+                          'Login',
+                          style: TextStyle(
+                            fontSize: 20,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               // Text(message), // Display login message
             ],
           ),
